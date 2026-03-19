@@ -11,14 +11,19 @@ venv/
 *.conda
 
 # Daten (WICHTIG!)
-airtrafficsim/data/
-data/
+airtrafficsim/airtrafficsim/data/navigation/
+airtrafficsim/airtrafficsim/data/result/
+airtrafficsim/data/navigation
+airtrafficsim/data/result
+data/navigation
+data/result
 
 # Große Dateien
 *.zip
 *.dat
 *.h5
 *.nc
+*.csv
 
 # OS
 .DS_Store
