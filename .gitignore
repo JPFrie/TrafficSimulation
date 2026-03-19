@@ -1,0 +1,25 @@
+# Conda / Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Environments
+env/
+venv/
+*.conda
+
+# Daten (WICHTIG!)
+airtrafficsim/data/
+data/
+
+# Große Dateien
+*.zip
+*.dat
+*.h5
+*.nc
+
+# OS
+.DS_Store
+Thumbs.db
