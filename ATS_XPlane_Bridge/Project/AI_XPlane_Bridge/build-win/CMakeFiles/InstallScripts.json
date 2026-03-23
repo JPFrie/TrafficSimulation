@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

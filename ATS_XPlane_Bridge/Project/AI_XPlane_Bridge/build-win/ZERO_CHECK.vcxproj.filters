@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="E:\X-Plane Plugins\AI_XPlane_Bridge\build-win\CMakeFiles\4e3afb7412b2b4876b9ca373b21d2b0e\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{35C75EB2-71C4-3114-A7A0-41DF06B0883F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

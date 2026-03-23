@@ -1,0 +1,10 @@
+^E:\X-PLANE PLUGINS\AI_XPLANE_BRIDGE\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SE:/X-Plane Plugins/AI_XPlane_Bridge" "-BE:/X-Plane Plugins/AI_XPlane_Bridge/build-win" --check-stamp-file "E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
