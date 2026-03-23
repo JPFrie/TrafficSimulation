@@ -15,7 +15,6 @@ from airtrafficsim.core.traffic import Traffic
 from airtrafficsim.core.navigation import Nav
 from airtrafficsim.core.integrations.xplane_bridge import XPlaneBridge, XPlaneBridgeConfig
 
-
 class Environment:
     """
     Base class for simulation environment.

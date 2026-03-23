@@ -21,7 +21,7 @@ def _detect_windows_host_ip() -> str:
 class XPlaneBridgeConfig:
     def __init__(
         self,
-        xplane_host: Optional[str] = "192.168.178.159",
+        #xplane_host: Optional[str] = "127.0.0.1",
         xplane_port: int = 5005,     # WSL -> X-Plane plugin
         player_rx_port: int = 5006,  # X-Plane plugin -> WSL
         hz: float = 1.0,
@@ -29,8 +29,7 @@ class XPlaneBridgeConfig:
     ):
         # Prefer explicit host, then env, then WSL nameserver detection
         self.xplane_host = (
-            xplane_host
-            or os.environ.get("XPLANE_HOST")
+            os.environ.get("XPLANE_HOST")
             or _detect_windows_host_ip()
         )
 
@@ -82,7 +81,7 @@ class XPlaneBridge:
         self._tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # not strictly needed for UDP TX, but harmless:
         self._tx.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
+        self.log(f"[XPlaneBridge] Opened Socket to : {self.cfg.xplane_host}")
         # RX (player feedback)
         self._rx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._rx.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

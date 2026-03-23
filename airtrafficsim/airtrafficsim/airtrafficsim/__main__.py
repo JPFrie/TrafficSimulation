@@ -5,6 +5,12 @@ from pathlib import Path
 from importlib import import_module
 from zipfile import ZipFile
 
+def ask_for_ip() -> str | None:
+    from airtrafficsim.core.integrations.xplane_bridge import _detect_windows_host_ip
+    default_ip = _detect_windows_host_ip()
+    user_input = input(f"Enter X-Plane IP [{default_ip}]: ").strip()
+    return user_input if user_input else default_ip
+
 import airtrafficsim.server.server as server
 
 def main():
@@ -27,6 +33,9 @@ def main():
                         help='Run user defined environment without UI: airtrafficsim --headless <env name>.')
     
     args = parser.parse_args()
+
+    xplane_ip = ask_for_ip()
+    os.environ["XPLANE_HOST"] = xplane_ip
 
     if args.init:
         # Create a symbolic link to the data folder
