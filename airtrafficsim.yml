@@ -137,4 +137,3 @@ dependencies:
       - openap==1.2
       - scikit-fuzzy==0.5.0
       - scipy==1.10.1
-prefix: /home/ubuntu/anaconda3/envs/airtrafficsim
