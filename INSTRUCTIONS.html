@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <title>TrafficSimulation</title>
+    <meta content="">
+    <style></style>
+  </head>
+  <body>
+    <h1>Traffic Simulation v0.1 Instructions</h1><br>
+    <h2>How to run the application</h2>
+    <p>The TrafficSimulation Environment uses two main architectures - one python-based webserver and one X-Plane plugin. To start both of them, do the following:</p>
+    <h3>TrafficSimulation:</h3>
+    <ol>
+      <li>Start DA 1 PC and open a terminal</li>
+      <li>Type in terminal "conda activate airtrafficsim" to activate and open the corresponding anaconda environment</li>
+      <li>Check that the conda environment is active - in front of sim@devbox should be a (airtrafficsim) tag</li>
+      <li>Start the webserver environment with the command "airtrafficsim". You'll be asked for the IP of the X-Plane PC. Enter the IP address of DA4 SIMZERO (normally 10.18.20.22, in case check with ifconfig on the SIMZERO)</li>
+      <li>Open a webbrowser and enter the link "localhost:6111". You should now see a world map.</li>
+      <li>Make sure that the X-Plane plugin is already running at this step.</li>
+      <li>To open a scenario, click the "Simulation" button in the lower menu bar. You can select the specific scenario in the popup window and by clicking on it, The scenario takes some time to load since it pre-loads the X-Plane navigation database and caches it internally. Currently the development scenario is MUCTEST</li>
+      <li>(WIP): To modify aircraft parameters, click the green button "A/C Controls". It is currently still work in progress and will be fully functional with the next development version.</li>
+      <li>If you want to stop the application, go to the terminal and press CTR+C two times to get back access to the normal terminal. If you want to deactivate the anaconda environment, type in the command "conda deactivate" and you are back in the base linux environment (since python packages for airtrafficsim environment are stored locally in the conda environment and may not available in the basic linux system).</li>
+    </ol>
+    <br>
+    <h3>X-Plane 11/12 Plugin:</h3>
+    <ol>
+      <li>Start DA 4 SIMZERO PC and start X-Plane 12 with all the simulation framework.</li>
+      <li>In X-Plane, hover over the top control bar and head to Plugins->AI_XPlane_Bridge->Start/Stop and click it. You can confirm that it runs when this menu option has a dot before the "Start/Stop".</li>
+      <li>Make sure that you start the X-Plane Plugin <b>BEFORE</b> you load a scenario in the Traffic Simulation.</li>
+    </ol>
+    <br>
+    <h3>How to create a new scenario:</h3>
+    <ol>
+      <li>Open a folder or terminal and navigate to ?/home/sim/anaconda3/envs/airtrafficsim/python3.10/site-packages/airtrafficsim/data/environment</li>
+      <li>Copy the "OpenApDemo.py file and open it.</li>
+      <li>Confirm in the init method that "performance_mode" is set to "OpenAP". BADA performance model will be accessible in the future.</li>
+      <li>Open MUCTEST.py scenario and get familiar with the structure of how to add and modify aircraft (parameters). A detailed description will be added in the future.</li>
+    </ol>
+    <br>
+    <h3>Development Roadmap</h3>
+    <ul>
+      <li>Next: Convert BADA flight plan, SID and STAR, approach and holding procedure logic to OpenAP enabling a whole mission flight for Traffic Simulation aircraft</li>
+      <li>Next: Improving flight and ground model, interpolation and visualization</li>
+      <li>Next: Extending and improving dynamic aircraft control tool</li>
+      <li>Adding TCAS functionability and communication with simulation framework and Garmin suite</li>
+      <li>Extending model matching capabilities</li>
+    </ul>
+  </body>
+</html>
