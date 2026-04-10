@@ -82,7 +82,7 @@ events:
       The output was:
       0
       MSBuild version 17.14.40+3e7442088 for .NET Framework
-      Build started 3/23/2026 9:18:12 AM.
+      Build started 4/1/2026 11:40:37 AM.
       
       Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\4.2.3\\CompilerIdC\\CompilerIdC.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -111,7 +111,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.82
+      Time Elapsed 00:00:00.47
       
       
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
@@ -719,7 +719,7 @@ events:
       The output was:
       0
       MSBuild version 17.14.40+3e7442088 for .NET Framework
-      Build started 3/23/2026 9:18:13 AM.
+      Build started 4/1/2026 11:40:38 AM.
       
       Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\4.2.3\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -748,7 +748,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.58
+      Time Elapsed 00:00:00.47
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -1108,8 +1108,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-zy76r1"
-      binary: "E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-zy76r1"
+      source: "E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-wnzrsi"
+      binary: "E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-wnzrsi"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
       CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1118,39 +1118,39 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-zy76r1'
+        Change Dir: 'E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-wnzrsi'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Professional/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_6a77a.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Professional/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_3dfe6.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.14.40+3e7442088 for .NET Framework
-        Build started 3/23/2026 9:18:14 AM.
+        Build started 4/1/2026 11:40:38 AM.
         
-        Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-zy76r1\\cmTC_6a77a.vcxproj" on node 1 (default targets).
+        Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-wnzrsi\\cmTC_3dfe6.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-zy76r1\\Debug\\".
-          Creating directory "cmTC_6a77a.dir\\Debug\\cmTC_6a77a.tlog\\".
+          Creating directory "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-wnzrsi\\Debug\\".
+          Creating directory "cmTC_3dfe6.dir\\Debug\\cmTC_3dfe6.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_6a77a.dir\\Debug\\cmTC_6a77a.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_6a77a.dir\\Debug\\cmTC_6a77a.tlog\\unsuccessfulbuild".
+          Creating "cmTC_3dfe6.dir\\Debug\\cmTC_3dfe6.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_3dfe6.dir\\Debug\\cmTC_3dfe6.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_6a77a.dir\\Debug\\\\" /Fd"cmTC_6a77a.dir\\Debug\\vc143.pdb" /external:W1 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_3dfe6.dir\\Debug\\\\" /Fd"cmTC_3dfe6.dir\\Debug\\vc143.pdb" /external:W1 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35222 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_6a77a.dir\\Debug\\\\" /Fd"cmTC_6a77a.dir\\Debug\\vc143.pdb" /external:W1 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_3dfe6.dir\\Debug\\\\" /Fd"cmTC_3dfe6.dir\\Debug\\vc143.pdb" /external:W1 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
           CMakeCCompilerABI.c
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /OUT:"E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-zy76r1\\Debug\\cmTC_6a77a.exe" /INCREMENTAL /ILK:"cmTC_6a77a.dir\\Debug\\cmTC_6a77a.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-zy76r1/Debug/cmTC_6a77a.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-zy76r1/Debug/cmTC_6a77a.lib" /MACHINE:X64  /machine:x64 cmTC_6a77a.dir\\Debug\\CMakeCCompilerABI.obj
-          cmTC_6a77a.vcxproj -> E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-zy76r1\\Debug\\cmTC_6a77a.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /OUT:"E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-wnzrsi\\Debug\\cmTC_3dfe6.exe" /INCREMENTAL /ILK:"cmTC_3dfe6.dir\\Debug\\cmTC_3dfe6.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-wnzrsi/Debug/cmTC_3dfe6.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-wnzrsi/Debug/cmTC_3dfe6.lib" /MACHINE:X64  /machine:x64 cmTC_3dfe6.dir\\Debug\\CMakeCCompilerABI.obj
+          cmTC_3dfe6.vcxproj -> E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-wnzrsi\\Debug\\cmTC_3dfe6.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_6a77a.dir\\Debug\\cmTC_6a77a.tlog\\unsuccessfulbuild".
-          Touching "cmTC_6a77a.dir\\Debug\\cmTC_6a77a.tlog\\cmTC_6a77a.lastbuildstate".
-        Done Building Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-zy76r1\\cmTC_6a77a.vcxproj" (default targets).
+          Deleting file "cmTC_3dfe6.dir\\Debug\\cmTC_3dfe6.tlog\\unsuccessfulbuild".
+          Touching "cmTC_3dfe6.dir\\Debug\\cmTC_3dfe6.tlog\\cmTC_3dfe6.lastbuildstate".
+        Done Building Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-wnzrsi\\cmTC_3dfe6.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.55
+        Time Elapsed 00:00:00.49
         
       exitCode: 0
   -
@@ -1190,8 +1190,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-08jdun"
-      binary: "E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-08jdun"
+      source: "E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-c6v0ub"
+      binary: "E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-c6v0ub"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /GR /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1201,39 +1201,39 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-08jdun'
+        Change Dir: 'E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-c6v0ub'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Professional/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_091c7.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Professional/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_fa080.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.14.40+3e7442088 for .NET Framework
-        Build started 3/23/2026 9:18:15 AM.
+        Build started 4/1/2026 11:40:39 AM.
         
-        Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-08jdun\\cmTC_091c7.vcxproj" on node 1 (default targets).
+        Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-c6v0ub\\cmTC_fa080.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-08jdun\\Debug\\".
-          Creating directory "cmTC_091c7.dir\\Debug\\cmTC_091c7.tlog\\".
+          Creating directory "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-c6v0ub\\Debug\\".
+          Creating directory "cmTC_fa080.dir\\Debug\\cmTC_fa080.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_091c7.dir\\Debug\\cmTC_091c7.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_091c7.dir\\Debug\\cmTC_091c7.tlog\\unsuccessfulbuild".
+          Creating "cmTC_fa080.dir\\Debug\\cmTC_fa080.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_fa080.dir\\Debug\\cmTC_fa080.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_091c7.dir\\Debug\\\\" /Fd"cmTC_091c7.dir\\Debug\\vc143.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_fa080.dir\\Debug\\\\" /Fd"cmTC_fa080.dir\\Debug\\vc143.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35222 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_091c7.dir\\Debug\\\\" /Fd"cmTC_091c7.dir\\Debug\\vc143.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_fa080.dir\\Debug\\\\" /Fd"cmTC_fa080.dir\\Debug\\vc143.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
           CMakeCXXCompilerABI.cpp
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /OUT:"E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-08jdun\\Debug\\cmTC_091c7.exe" /INCREMENTAL /ILK:"cmTC_091c7.dir\\Debug\\cmTC_091c7.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-08jdun/Debug/cmTC_091c7.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-08jdun/Debug/cmTC_091c7.lib" /MACHINE:X64  /machine:x64 cmTC_091c7.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_091c7.vcxproj -> E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-08jdun\\Debug\\cmTC_091c7.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /OUT:"E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-c6v0ub\\Debug\\cmTC_fa080.exe" /INCREMENTAL /ILK:"cmTC_fa080.dir\\Debug\\cmTC_fa080.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-c6v0ub/Debug/cmTC_fa080.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"E:/X-Plane Plugins/AI_XPlane_Bridge/build-win/CMakeFiles/CMakeScratch/TryCompile-c6v0ub/Debug/cmTC_fa080.lib" /MACHINE:X64  /machine:x64 cmTC_fa080.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_fa080.vcxproj -> E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-c6v0ub\\Debug\\cmTC_fa080.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_091c7.dir\\Debug\\cmTC_091c7.tlog\\unsuccessfulbuild".
-          Touching "cmTC_091c7.dir\\Debug\\cmTC_091c7.tlog\\cmTC_091c7.lastbuildstate".
-        Done Building Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-08jdun\\cmTC_091c7.vcxproj" (default targets).
+          Deleting file "cmTC_fa080.dir\\Debug\\cmTC_fa080.tlog\\unsuccessfulbuild".
+          Touching "cmTC_fa080.dir\\Debug\\cmTC_fa080.tlog\\cmTC_fa080.lastbuildstate".
+        Done Building Project "E:\\X-Plane Plugins\\AI_XPlane_Bridge\\build-win\\CMakeFiles\\CMakeScratch\\TryCompile-c6v0ub\\cmTC_fa080.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.54
+        Time Elapsed 00:00:00.47
         
       exitCode: 0
   -

@@ -86,12 +86,69 @@ button {
   border-radius: 10px;
   width: 300px;
 }
+
+.headingRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.headingIcon {
+  width: 40px;
+  height: 40px;
+}
+
+.plane {
+  width: 100%;
+  height: 100%;
+  fill: white;
+
+  transform-origin: 50% 50%;
+  transition: transform 0.2s linear;
+}
+
+.setRwyBtn {
+  width: 100%;
+  background: #FF9800;
+  color: white;
+  margin-bottom: 6px;
+}
+
+.takeoffBtn {
+  width: 100%;
+  background: #4CAF50;
+  color: white;
+  margin-bottom: 6px;
+}
+
+#controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#controls.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+#controls.grid .aircraft {
+  background: #2a2a2a;
+  border-radius: 12px;
+  padding: 12px;
+
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
 </style>
 </head>
 
 <body>
 
 <h2>Aircraft Controls</h2>
+
+<button id="layoutBtn">Toggle Grid</button>
 <button id="addBtn">➕ Add Aircraft</button>
 
 <div id="controls"></div>
@@ -125,6 +182,21 @@ button {
     <input id="alt" placeholder="Altitude">
     <input id="spd" placeholder="Speed">
 
+    <hr>
+
+    <h4>Optional Flight Data</h4>
+
+    <input id="dep" placeholder="Departure Airport (EDDF)">
+    <input id="dep_rwy" placeholder="Departure Runway (25C)">
+    <input id="sid" placeholder="SID">
+
+    <input id="arr" placeholder="Arrival Airport (EDDM)">
+    <input id="arr_rwy" placeholder="Arrival Runway (26L)">
+    <input id="star" placeholder="STAR">
+    <input id="app" placeholder="Approach">
+
+    <input id="fpl" placeholder="Flight Plan (comma separated: NOLGO,AKONI,...)">
+
     <button id="createBtn">Create</button>
   </div>
 </div>
@@ -137,77 +209,169 @@ const modal = document.getElementById("modal");
 
 let editingAircraft = null;
 
-// RENDER
+/**
+ * SPEICHERT DOM ELEMENTE
+ */
+const aircraftMap = new Map();
+
+function updateLayout() {
+  const isFullscreen =
+    window.innerWidth > 1200 && window.innerHeight > 700;
+
+  if (isFullscreen) {
+    root.classList.add("grid");
+  } else {
+    root.classList.remove("grid");
+  }
+}
+
+window.addEventListener("resize", updateLayout);
+updateLayout();
+
+/**
+ * RENDER (OHNE RESET)
+ */
 function render(list){
-  root.innerHTML = "";
 
   list.forEach(ac => {
 
-    const isEditing = editingAircraft === ac.id;
+    let div = aircraftMap.get(ac.id);
 
-    const div = document.createElement("div");
-    div.className = "aircraft";
+    // =========================
+    // CREATE (nur einmal!)
+    // =========================
+    if (!div) {
 
-    div.innerHTML =
-      "<h4>"+ac.name+" ("+ac.type+")</h4>" +
-      "<button class='deleteBtn'>❌</button>" +
+      div = document.createElement("div");
+      div.className = "aircraft";
 
-      "Heading:<input type='range' min='0' max='360' class='h'>" +
-      "Altitude:<input type='number' class='a'>" +
-      "Speed:<input type='number' class='s'>" +
+      div.innerHTML =
+        "<h4>"+ac.name+" ("+ac.type+")</h4>" +
+        "<button class='deleteBtn'>❌</button>" +
 
-      "<button class='updateBtn'>Update</button>";
+        "Heading:" +
+        "<div class='headingRow'>" +
+          "<div class='headingIcon'>" +
+            "<svg viewBox='0 0 100 100' class='plane'>" +
+              "<polygon points='50,5 60,40 55,40 55,75 65,80 65,90 50,85 35,90 35,80 45,75 45,40 40,40' />" +
+            "</svg>" +
+          "</div>" +
+          "<input type='number' min='0' max='360' class='h'>" +
+        "</div>" +
 
-    const h = div.querySelector(".h");
-    const a = div.querySelector(".a");
-    const s = div.querySelector(".s");
+        "Altitude:<input type='number' class='a'>" +
+        "Speed:<input type='number' class='s'>" +
 
-    if (!isEditing) {
-      h.value = ac.heading;
-      a.value = ac.altitude;
-      s.value = ac.tas;
-    }
+        "<button class='setRwyBtn'>Set to RWY</button>" +
+        "<button class='takeoffBtn'>Take-off</button>" +
+        "<button class='updateBtn'>Update</button>";
 
-    [h,a,s].forEach(el=>{
-      el.addEventListener("focus", ()=> editingAircraft = ac.id);
-      el.addEventListener("blur", ()=> editingAircraft = null);
-    });
+      const h = div.querySelector(".h");
+      const a = div.querySelector(".a");
+      const s = div.querySelector(".s");
+      const plane = div.querySelector(".plane");
 
-    // UPDATE
-    div.querySelector(".updateBtn").onclick = ()=>{
-      socket.emit("setAircraftState",{
-        ac_id: ac.id,
-        heading: +h.value,
-        altitude: +a.value,
-        tas: +s.value
+      // FOCUS TRACKING
+      [h,a,s].forEach(el=>{
+        el.addEventListener("focus", ()=> editingAircraft = ac.id);
+        el.addEventListener("blur", ()=> editingAircraft = null);
       });
 
-      editingAircraft = null;
-    };
+      // LIVE ROTATION BEIM TIPPEN
+      h.addEventListener("input", () => {
+        const heading = (h.value % 360 + 360) % 360;
+        plane.style.transform = `rotate(${heading}deg)`;
+      });
 
-    // DELETE
-    div.querySelector(".deleteBtn").onclick = ()=>{
-      socket.emit("deleteAircraft",{ac_id: ac.id});
-    };
+      // UPDATE BUTTON
+      div.querySelector(".updateBtn").onclick = ()=>{
+        socket.emit("setAircraftState",{
+          ac_id: ac.id,
+          heading: +h.value,
+          altitude: +a.value,
+          cas: +s.value
+        });
+      };
 
-    root.appendChild(div);
+      // DELETE BUTTON
+      div.querySelector(".deleteBtn").onclick = ()=>{
+        socket.emit("deleteAircraft",{ac_id: ac.id});
+      };
+
+      // SET TO RWY
+      div.querySelector(".setRwyBtn").onclick = ()=>{
+        socket.emit("setToRunway",{
+          ac_id: ac.id
+        });
+      };
+
+      // TAKE OFF
+      div.querySelector(".takeoffBtn").onclick = ()=>{
+        socket.emit("takeOff",{
+          ac_id: ac.id
+        });
+      };
+
+      root.appendChild(div);
+      aircraftMap.set(ac.id, div);
+    }
+
+    // =========================
+    // UPDATE (ohne Reset)
+    // =========================
+    if (editingAircraft !== ac.id) {
+
+      const h = div.querySelector(".h");
+      const a = div.querySelector(".a");
+      const s = div.querySelector(".s");
+      const plane = div.querySelector(".plane");
+
+      const heading = (ac.heading % 360 + 360) % 360;
+
+      h.value = heading;
+      a.value = ac.altitude;
+      s.value = ac.cas;
+
+      plane.style.transform = `rotate(${heading}deg)`;
+    }
+  });
+
+  // =========================
+  // REMOVE DELETED AIRCRAFT
+  // =========================
+  aircraftMap.forEach((div, id) => {
+    if (!list.find(ac => ac.id === id)) {
+      div.remove();
+      aircraftMap.delete(id);
+    }
   });
 }
 
-// OPEN MODAL
+/**
+ * MODAL HANDLING
+ */
 document.getElementById("addBtn").onclick = () => {
   modal.style.display = "flex";
 };
 
-// CLOSE MODAL
+document.getElementById("layoutBtn").onclick = () => {
+  root.classList.toggle("grid");
+};
+
 modal.onclick = (e) => {
   if (e.target === modal) {
     modal.style.display = "none";
   }
 };
 
-// CREATE AIRCRAFT
+/**
+ * CREATE AIRCRAFT
+ */
 document.getElementById("createBtn").onclick = () => {
+
+  const flightPlan = fpl.value
+    ? fpl.value.split(",").map(wp => wp.trim())
+    : [];
 
   socket.emit("addAircraft",{
     callsign: cs.value,
@@ -217,13 +381,26 @@ document.getElementById("createBtn").onclick = () => {
     lon: lon.value,
     heading: hdg.value,
     altitude: alt.value,
-    speed: spd.value
+    speed: spd.value,
+
+    departure_airport: dep.value,
+    departure_runway: dep_rwy.value,
+    sid: sid.value,
+
+    arrival_airport: arr.value,
+    arrival_runway: arr_rwy.value,
+    star: star.value,
+    approach: app.value,
+
+    flight_plan: flightPlan
   });
 
   modal.style.display = "none";
 };
 
-// AUTO UPDATE
+/**
+ * AUTO UPDATE (Polling)
+ */
 setInterval(()=>socket.emit("getAircraftList"),1000);
 socket.on("aircraftList", render);
 

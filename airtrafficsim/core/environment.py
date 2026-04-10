@@ -83,6 +83,8 @@ class Environment:
         # --- X-Plane bridge integration ---
         self._xp_lock = threading.Lock()
         self._xp_snapshot = []  # latest aircraft list for X-Plane
+        self._last_player_state = None
+        self._player_row = None
 
         self.controlled_callsign = str(controlled_callsign)
         self.exclude_controlled_from_ai = bool(exclude_controlled_from_ai)
@@ -222,30 +224,14 @@ class Environment:
         with self._xp_lock:
             self._xp_snapshot = aircraft
 
+    def _apply_player_state_from_xplane(self, player: dict):
+        # speichern für später (Frontend + Buffer)
+        self._last_player_state = player
+        print("PLAYER RECEIVED:", player)
+        
     def _find_aircraft_index_by_callsign(self, callsign: str) -> int:
         matches = np.where(self.traffic.call_sign == callsign)[0]
         return int(matches[0]) if len(matches) else -1
-
-    def _apply_player_state_from_xplane(self, player: dict):
-        cs = self.controlled_callsign
-        idx = self._find_aircraft_index_by_callsign(cs)
-        if idx < 0:
-            return
-
-        lat = float(player.get("lat", 0.0))
-        lon = float(player.get("lon", 0.0))
-        alt_m = float(player.get("alt_m", 0.0))
-        hdg = float(player.get("hdg_deg", 0.0))
-        tas_mps = float(player.get("tas_mps", 0.0))
-
-        self.traffic.lat[idx] = lat
-        self.traffic.long[idx] = lon
-        self.traffic.alt[idx] = Unit.m2ft(alt_m)
-        self.traffic.heading[idx] = hdg
-
-        # Optional: override TAS (only if you want to force it)
-        if tas_mps > 0.0:
-            self.traffic.tas[idx] = self._mps_to_knots(tas_mps)
 
     # ---------- Extension points ----------
 
@@ -332,6 +318,23 @@ class Environment:
                 self.traffic.cas,
             ))
             self.buffer_data.extend(data)
+
+            p = self._last_player_state
+
+            if p is not None:
+                timestamp = (self.start_time + timedelta(seconds=self.global_time)).isoformat(timespec="seconds")
+
+                player_row = [
+                    -999,
+                    "OWNSHIP",
+                    str(timestamp),
+                    float(p["lon"]),
+                    float(p["lat"]),
+                    float(p["alt_m"]),
+                    float(p["spd"])
+                ]
+
+                self.buffer_data.append(player_row)
 
             now = time.time()
             if (now - self.last_sent_time) >= self.send_interval_s:
@@ -530,12 +533,14 @@ class Environment:
                     content.iloc[:, 6].to_numpy(dtype=float),
                 )]
 
+                color = [255, 0, 0, 255] if call_sign == "OWNSHIP" else [39, 245, 106, 215]
+
                 trajectory = {
                     "id": call_sign,
                     "position": {"cartographicDegrees": positions},
                     "point": {
-                        "pixelSize": 5,
-                        "color": {"rgba": [39, 245, 106, 215]}
+                        "pixelSize": 6 if call_sign == "OWNSHIP" else 5,
+                        "color": {"rgba": color}
                     },
                     "path": {
                         "leadTime": 0,
@@ -553,6 +558,50 @@ class Environment:
                     }
                 }
                 document.append(trajectory)
+
+        if self._last_player_state:
+            p = self._last_player_state
+
+            sim_now = self.start_time + timedelta(seconds=self.global_time)
+
+            lon = float(p["lon"])
+            lat = float(p["lat"])
+            alt = float(p["alt_m"])
+            spd = float(p["spd"])
+
+            label_text = f"OWNSHIP\n{int(Unit.m2ft(alt))}ft  {float(spd)} kt"
+
+            document.append({
+                "id": "OWNSHIP",
+
+                "position": {
+                    "epoch": sim_now.isoformat(),
+                    "cartographicDegrees": [
+                        0, lon, lat, alt
+                    ]
+                },
+
+                "point": {
+                    "pixelSize": 6,
+                    "color": {"rgba": [255, 0, 0, 255]}
+                },
+
+                "label": {
+                    "text": label_text,
+                    "font": "9px sans-serif",
+                    "horizontalOrigin": "LEFT",
+                    "pixelOffset": {"cartesian2": [20, 20]},
+                    "distanceDisplayCondition": {"distanceDisplayCondition": [0, 1500000]},
+                    "showBackground": True,
+                    "backgroundColor": {"rgba": [0, 0, 0, 50]},
+                },
+
+                "path": {
+                    "leadTime": 0,
+                    "trailTime": int(max(0, self.czml_trail_seconds)),
+                    "distanceDisplayCondition": {"distanceDisplayCondition": [0, 1500000]},
+                }
+            })
 
         # Graph data (optional)
         graph_data = []

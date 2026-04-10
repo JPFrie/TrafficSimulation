@@ -142,17 +142,23 @@ class XPlaneBridge:
     # -------------------------
     # RX: player feedback (JSON)
     # -------------------------
-    def _poll_player(self) -> Optional[Dict[str, Any]]:
+    def _poll_all_player(self):
         if not self._rx:
             return None
-        try:
-            data, _ = self._rx.recvfrom(65535)
-            return json.loads(data.decode("utf-8", errors="replace"))
-        except BlockingIOError:
-            return None
-        except Exception as e:
-            self.log(f"[XPlaneBridge] bad player packet: {e}")
-            return None
+
+        latest = None
+
+        while True:
+            try:
+                data, _ = self._rx.recvfrom(65535)
+                latest = json.loads(data.decode("utf-8", errors="replace"))
+            except BlockingIOError:
+                break
+            except Exception as e:
+                self.log(f"[XPlaneBridge] bad player packet: {e}")
+                break
+
+        return latest
 
     # -------------------------
     # TX: aircraft snapshot (CSV lines)
@@ -170,7 +176,7 @@ class XPlaneBridge:
           CALLSIGN,MODEL,lat,lon,alt_ft,hdg,pitch,roll
         Returns None if missing required fields.
         """
-        #self.log(a)
+        
         callsign = self._pick(a, ["callsign", "call_sign", "id", "cs"])
         if not callsign:
             return None
@@ -249,7 +255,7 @@ class XPlaneBridge:
             t0 = time.time()
 
             # 1) player feedback (JSON)
-            msg = self._poll_player()
+            msg = self._poll_all_player()
             if msg and "player" in msg:
                 try:
                     self.on_player_state(msg["player"])

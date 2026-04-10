@@ -673,272 +673,10 @@ void AircraftManager::updateAircraft(const std::string& id, const AircraftState&
     ac.t_next = ac.t_prev + NET_DT;
 }
 
-/*void AircraftManager::applyPositions()
-{
-    const double now = GetWallTime();
-    float agl_m = 99999.0f;
-    double groundRaw = 0.0;
-    bool hitTerrain = false;
-
-    // Shared terrain probe
-    static XPLMProbeRef probe = nullptr;
-    if (!probe) probe = XPLMCreateProbe(xplm_ProbeY);
-
-    // Small helpers
-    auto clamp01 = [](double x) {
-        if (x < 0.0) return 0.0;
-        if (x > 1.0) return 1.0;
-        return x;
-    };
-
-    auto clampf = [](float v, float lo, float hi){ 
-        return (v < lo) ? lo : (v > hi) ? hi : v; 
-    };
-
-    for (auto& kv : mAircraft) {
-        auto& ac = kv.second;
-        if (!ac.has_render) continue;
-
-        // ============================================================
-        // A) Dead-reckoning in X-Plane LOCAL meters using GS vector
-        // ============================================================
-        double dt = now - ac.t_render;
-        if (dt < 0.0) dt = 0.0;
-        if (dt > 0.2) dt = 0.2; // clamp long frame stalls (prevents big jumps)
-
-        // X-Plane LOCAL axes:
-        //   X = East (meters)
-        //   Y = Up   (meters)
-        //   Z = South(meters)
-        
-        const double gs_abs = std::sqrt(
-            (double)ac.next.gs_east_mps  * (double)ac.next.gs_east_mps +
-            (double)ac.next.gs_north_mps * (double)ac.next.gs_north_mps
-        );
-
-        // on_ground wenn Terrain getroffen & niedrig, sonst fallback über Geschwindigkeit
-        const bool on_ground_dr =
-            (hitTerrain && agl_m < 3.0f) ||
-            (hitTerrain && agl_m < 10.0f && gs_abs < 25.0); // taxi/roll
-
-        double vx = 0.0, vz = 0.0;
-
-        // --- GROUND: GS vector (best for taxi) ---
-        if (on_ground_dr) {
-            // X=East, Z=South, North=-Z
-            vx = (double)ac.next.gs_east_mps;
-            vz = -(double)ac.next.gs_north_mps;
-        }
-        // --- AIR: TAS + Heading (best in cruise/climb/desc) ---
-        else {
-            // heading degrees -> unit vector
-            const double hdg = (double)ac.next.yaw * 3.14159265358979323846 / 180.0;
-            const double tas = (double)ac.next.tas_mps; // MUST exist in AircraftState
-
-            const double east  = tas * std::sin(hdg);
-            const double north = tas * std::cos(hdg);
-
-            vx = east;
-            vz = -north; // North=-Z
-        }
-
-        // Apply DR
-        ac.rx += vx * dt;
-        ac.rz += vz * dt;
-        ac.ry += (double)ac.next.vs_mps * dt;
-
-        ac.t_render = now;
-
-        // ============================================================
-        // B) Terrain probe + ground smoothing (prevents runway jitter)
-        // ============================================================
-        if (probe) {
-            XPLMProbeInfo_t info{};
-            info.structSize = sizeof(info);
-
-            if (XPLMProbeTerrainXYZ(probe, ac.rx, ac.ry, ac.rz, &info) == xplm_ProbeHitTerrain) {
-                groundRaw = (double)info.locationY;
-                hitTerrain = true;
-
-                // Smooth the ground height per aircraft
-                if (!ac.hasGround) {
-                    ac.groundY = groundRaw;
-                    ac.hasGround = true;
-                } else {
-                    const double alpha = 0.05;
-                    ac.groundY = ac.groundY + (groundRaw - ac.groundY) * alpha;
-                }
-
-                agl_m = (float)(ac.ry - ac.groundY);
-            }
-        }
-
-        // Detect "on ground"
-        const bool on_ground =
-            (hitTerrain && agl_m < 3.0f) ||
-            (hitTerrain && agl_m < 10.0f && std::fabs(ac.next.gs_north_mps) + std::fabs(ac.next.gs_east_mps) < 20.0f);
-
-        // ============================================================
-        // C) Soft correction towards target (local), tuned for ground/air
-        // ============================================================
-        if (ac.has_prev && ac.has_next && ac.t_next > ac.t_prev) {
-            const double total = ac.t_next - ac.t_prev;
-            double a = (total > 1e-6) ? (now - ac.t_prev) / total : 1.0;
-            a = clamp01(a);
-
-            // Linear local target between prev local (p*) and next local (n*)
-            const double tx = ac.px + (ac.nx - ac.px) * a;
-            const double ty = ac.py + (ac.ny - ac.py) * a;
-            const double tz = ac.pz + (ac.nz - ac.pz) * a;
-
-            // Gains: avoid micro-zitter on ground by using LOWER kPos but allow bigger maxCorr
-            const double kPos    = on_ground ? 0.25 : 0.20;
-            const double maxCorr = on_ground ? 6.0  : 20.0; // meters per frame
-
-            // Clamp correction vector magnitude (horizontal)
-            double dx = tx - ac.rx;
-            double dz = tz - ac.rz;
-            double d  = std::sqrt(dx*dx + dz*dz);
-
-            if (d > maxCorr && d > 1e-6) {
-                double s = maxCorr / d;
-                dx *= s;
-                dz *= s;
-            }
-
-            // Apply correction
-            ac.rx += dx * kPos;
-            ac.rz += dz * kPos;
-            ac.ry += (ty - ac.ry) * kPos;
-
-            // On-ground: clamp altitude to smoothed terrain to kill runway jitter
-            if (on_ground && ac.hasGround) {
-                ac.ry = ac.groundY + 0.5; // keep slightly above pavement
-            }
-        } else {
-            // If we have no prev/next yet but we're on ground, still clamp height smoothly
-            if (on_ground && ac.hasGround) {
-                ac.ry = ac.groundY + 0.5;
-            }
-        }
-
-        // ============================================================
-        // D) Gear target + timed animation using AGL
-        // CSL uses libxplanemp/controls/gear_ratio (0..1)
-        // ============================================================
-        // Recompute AGL after corrections (optional, but nicer)
-        float agl2 = agl_m;
-        if (probe && ac.hasGround) {
-            agl2 = (float)(ac.ry - ac.groundY);
-        }
-
-        bool want_gear_down = false;
-
-        // Down below ~2500 ft AGL (~762 m)
-        if (hitTerrain && agl2 < 762.0f) want_gear_down = true;
-
-        // Retract after takeoff: above 100 ft AGL (~30 m) and climbing
-        if (hitTerrain && agl2 > 30.0f && ac.next.vs_mps > 0.5f) want_gear_down = false;
-
-        const float desired = want_gear_down ? 1.0f : 0.0f;
-
-        if (desired != ac.gear_target) {
-            ac.gear_target = desired;
-            ac.gear_anim_start = now;
-            ac.gear_animating = true;
-            ac.gear_anim_duration = 5.0; // seconds
-        }
-
-        if (ac.gear_animating) {
-            const double dur = (ac.gear_anim_duration > 0.1) ? ac.gear_anim_duration : 0.1;
-            double t = (now - ac.gear_anim_start) / dur;
-
-            if (t >= 1.0) {
-                ac.gear_ratio = ac.gear_target;
-                ac.gear_animating = false;
-            } else {
-                t = clamp01(t);
-                // smoothstep for hydraulic feel
-                float tt = (float)t;
-                float smooth = tt * tt * (3.0f - 2.0f * tt);
-
-                if (ac.gear_target > ac.gear_ratio) ac.gear_ratio = smooth;        // extend
-                else                                ac.gear_ratio = 1.0f - smooth; // retract
-            }
-        }
-
-        // ============================================================
-        // E) Ensure object + instance (gear_ratio instance dataref)
-        // ============================================================
-        if (!ac.obj) {
-            ac.obj = getOrLoadModel(ac.model_key);
-            if (!ac.obj) continue;
-        }
-
-        if (!ac.inst) {
-            static const char* drefs[] = {
-                "libxplanemp/controls/gear_ratio",
-                nullptr
-            };
-            ac.inst = XPLMCreateInstance(ac.obj, drefs);
-            if (!ac.inst) continue;
-        }
-
-        // ============================================================
-        // F) Apply pose to X-Plane
-        // ============================================================
-        XPLMDrawInfo_t di;
-        std::memset(&di, 0, sizeof(di));
-        di.structSize = sizeof(di);
-
-        di.x = (float)ac.rx;
-        di.y = (float)ac.ry;
-        di.z = (float)ac.rz;
-
-        float targetYaw  = wrap360(ac.next.yaw);
-        float targetRoll = clampf(ac.next.bank_angle, -60.0f, 60.0f);
-
-        if (!ac.has_att)
-        {
-            ac.ryaw  = targetYaw;
-            ac.rroll = targetRoll;
-            ac.has_att = true;
-        }
-
-        const float dtf = (float)dt;
-        const float maxRollRateDegPerSec = on_ground ? 8.0f  : 15.0f;
-        const float maxYawRateDegPerSec  = on_ground ? 12.0f : 25.0f;
-        
-        ac.rroll = moveTowards(
-            ac.rroll,
-            targetRoll,
-            maxRollRateDegPerSec * dtf
-        );
-
-        ac.ryaw = moveTowardsAngleDeg(
-            ac.ryaw,
-            targetYaw,
-            maxYawRateDegPerSec * dtf
-        );
-        
-        di.heading = ac.ryaw;
-        di.roll    = ac.rroll;
-        di.pitch   = 0.0f;
-
-        // If you want pitch/roll, clamp them:
-        // auto clampf = [](float v, float lo, float hi){ return (v<lo)?lo:(v>hi)?hi:v; };
-        // di.pitch = clampf(ac.next.pitch, -30.0f, 30.0f);
-        // di.roll  = clampf(ac.next.roll,  -60.0f, 60.0f);
-
-        float drefValues[1] = { ac.gear_ratio };
-        XPLMInstanceSetPosition(ac.inst, &di, drefValues);
-    }
-}*/
-
 void AircraftManager::applyPositions()
 {
     const double now = GetWallTime();
-    static constexpr double SNAPSHOT_DELAY = 0.5;
+    static constexpr double SNAPSHOT_DELAY = 0.8;
     const double render_time = now - SNAPSHOT_DELAY; 
 
     static XPLMProbeRef probe = nullptr;
@@ -962,6 +700,7 @@ void AircraftManager::applyPositions()
         bool hitTerrain = false;
         double groundRaw = 0.0;
         float agl_m = 99999.0f;
+        float targetPitch = 0.0f;
 
         double dt = now - ac.t_render;
         if (dt < 0.0) dt = 0.0;
@@ -993,52 +732,61 @@ void AircraftManager::applyPositions()
             }
         }
 
-        const double gs_abs = std::sqrt(
-            ac.next.gs_east_mps * ac.next.gs_east_mps +
-            ac.next.gs_north_mps * ac.next.gs_north_mps
-        );
+        const double gs = std::sqrt(
+                ac.next.gs_east_mps * ac.next.gs_east_mps +
+                ac.next.gs_north_mps * ac.next.gs_north_mps
+            );
 
-        const bool on_ground = hitTerrain && agl_m < 15.0f;
+        const double yaw_rad = ac.ryaw * kPi / 180.0;
 
-        char buf[128];
-        sprintf(buf, "%s | GROUND %s\n",
-            kv.first.c_str(),
-            on_ground ? "YES" : "NO"
-        );
-        XPLMDebugString(buf);
+        if (hitTerrain)
+        {
+            if (ac.is_grounded)
+            {
+                // Ground verlassen (Takeoff)
+                if (agl_m > 6.0f || fabs(ac.next.vs_mps) > 2.0)
+                    ac.is_grounded = false;
+            }
+            else
+            {
+                // Ground betreten (Landing)
+                if (agl_m < 2.0f && fabs(ac.next.vs_mps) < 1.0)
+                    ac.is_grounded = true;
+            }
+        }
+        else
+        {
+            ac.is_grounded = false;
+        }
+
+        const bool on_ground = ac.is_grounded;
 
         double vx = 0.0;
         double vz = 0.0;
         
         if (on_ground)
         {
-            double gs = std::sqrt(
-                ac.next.gs_east_mps * ac.next.gs_east_mps +
-                ac.next.gs_north_mps * ac.next.gs_north_mps
-            );
-
-            double yaw_rad = ac.ryaw * kPi / 180.0;
-
             vx = gs * std::sin(yaw_rad);
             vz = -gs * std::cos(yaw_rad);
         }
         else
         {
-            const double hdg = ac.next.yaw * 3.14159265358979323846 / 180.0;
+            //const double hdg = ac.next.yaw * kPi / 180.0;
             const double tas = ac.next.tas_mps;
 
-            vx = tas * std::sin(hdg);
-            vz = -tas * std::cos(hdg);
+            vx = tas * std::sin(yaw_rad);
+            vz = -tas * std::cos(yaw_rad);
         }
 
-        ac.rx += vx * dt;
-        ac.rz += vz * dt;
-        ac.ry += ac.next.vs_mps * dt;
+        //ac.rx += vx * dt;
+        //ac.rz += vz * dt;
+        //ac.ry += ac.next.vs_mps * dt;
 
         ac.t_render = now;
 
-        ac.vel_x = vx;
-        ac.vel_z = vz;
+        // ------------------------------------------------
+        // X + Z Movement
+        // ------------------------------------------------
 
         if (ac.has_prev && ac.has_next && ac.t_next > ac.t_prev)
         {
@@ -1058,27 +806,148 @@ void AircraftManager::applyPositions()
             const double kPos = on_ground ? 0.02 : 0.015;
             const double maxCorr = on_ground ? 6.0 : 20.0;
 
+            // TARGET DIFFERENCE
             double dx = tx - ac.rx;
             double dz = tz - ac.rz;
 
-            // limit correction per frame
-            const double maxStep = 1.5;   // meters per frame
+            // Distanz zur Zielposition
+            double dist = std::hypot(dx, dz);
 
-            double d = std::sqrt(dx*dx + dz*dz);
+            // CORRECTION VELOCITY
+            double correctionTime;
 
-            if (d > maxStep)
+            if (dist < 5.0)
+                correctionTime = 3.0;
+            else if (dist < 20.0)
+                correctionTime = 2.0;
+            else
+                correctionTime = 1.0;
+
+            // "Wie schnell muss ich fliegen um in X Sekunden da zu sein?"
+            double corr_vx = dx / correctionTime;
+            double corr_vz = dz / correctionTime;
+
+            // Große Fehler schneller korrigieren
+            if (dist > 50.0)
             {
-                dx *= maxStep / d;
-                dz *= maxStep / d;
+                corr_vx *= 3.0;
+                corr_vz *= 3.0;
+            }
+            else if (dist > 20.0)
+            {
+                corr_vx *= 1.5;
+                corr_vz *= 1.5;
+            }
+            else if (dist < 0.5)
+            {
+                corr_vx = 0.0;
+                corr_vz = 0.0;
             }
 
-            ac.rx += dx * kPos;
-            ac.rz += dz * kPos;
-            ac.ry += (ty - ac.ry) * kPos;
+            // BLENDING (Physik + Correction)
+            double speed = std::hypot(vx, vz);
+            bool fast_taxi = on_ground && speed > 10.0; // ~20 kts
+            double blend;
 
-            if (on_ground && ac.hasGround)
-                ac.ry = ac.groundY + 0.5;
+            if(on_ground)
+            {
+                if(speed < 5.0)
+                    blend = 0.5;            // Taxi in Kurven
+                else if(speed < 15.0)
+                    blend = 0.3;           // Medium taxi speed
+                else
+                    blend = 0.1;            // Fast taxi speed -> weniger Korrektur
+            }
+            else
+            {
+                blend = (speed < 50.0) ? 0.2 : 0.1;
+            }
+
+            vx = vx * (1.0 - blend) + corr_vx * blend;
+            vz = vz * (1.0 - blend) + corr_vz * blend;
+
+            double velSmooth;
+            
+            if (speed < 5.0)
+                velSmooth = 0.2;
+            else if (speed < 30.0)
+                velSmooth = 0.1;
+            else
+                velSmooth = 0.05;
+
+            ac.vel_x += (vx - ac.vel_x) * velSmooth;
+            ac.vel_z += (vz - ac.vel_z) * velSmooth;
+
+            vx = ac.vel_x;
+            vz = ac.vel_z;
+
+            // APPLY MOVEMENT
+            ac.rx += vx * dt;
+            ac.rz += vz * dt;
+
+            // Differenz zur Zielhöhe (Server)
+            double dy = ty - ac.ry;
+
+            if (!on_ground)
+            {
+                // --------------------------------------------
+                // ✈️ AIR: velocity-based vertical movement
+                // --------------------------------------------
+
+                // Korrekturgeschwindigkeit (sanft)
+                double correctionTimeY = 3.0;
+
+                double corr_vy = dy / correctionTimeY;
+
+                // Deadzone gegen Micro-Jitter
+                if (fabs(dy) < 0.2)
+                    corr_vy = 0.0;
+
+                // VS + Correction mischen
+                double vy = ac.next.vs_mps * 0.8 + corr_vy * 0.2;
+
+                // Velocity smoothing
+                const double velSmoothY = 0.1;
+
+                ac.vel_y += (vy - ac.vel_y) * velSmoothY;
+                vy = ac.vel_y;
+
+                // Bewegung anwenden
+                ac.ry += vy * dt;
+            }
+            else if (on_ground && ac.hasGround)
+            {
+                // --------------------------------------------
+                // 🛬 GROUND: NUR terrain-follow (kein vy!)
+                // --------------------------------------------
+
+                double targetY = ac.groundY + 0.5;
+
+                // weich auf Boden ziehen
+                ac.ry += (targetY - ac.ry) * 0.4;
+
+                // optional: komplett stabilisieren
+                if (fabs(ac.ry - targetY) < 0.01)
+                    ac.ry = targetY;
+
+                // wichtig: vertical velocity reset
+                ac.vel_y = 0.0;
+            }
+
+            double safeSpeed = (speed > 1.0) ? speed : 1.0;
+            double pitch_vs = atan2(ac.next.vs_mps, safeSpeed) * 57.2958;
+            float pitch_net = ac.next.pitch;
+
+            // Mischung
+            targetPitch = pitch_net * 0.7f + (float)pitch_vs * 0.3f;
+
+            if (on_ground && speed < 10.0)
+                targetPitch = 0.0f;
         }
+
+        // ------------------------------------------------
+        // Y Movement
+        // ------------------------------------------------
 
         // ------------------------------------------------
         // Gear animation
@@ -1153,19 +1022,20 @@ void AircraftManager::applyPositions()
 
         // Bewegung seit letztem Frame
         float targetRoll = clampf(ac.next.bank_angle, -60.0f, 60.0f);
+        targetPitch = clampf(targetPitch, -10.0f, 15.0f);
 
         // Geschwindigkeit
-        double gs = sqrt(ac.vel_x * ac.vel_x + ac.vel_z * ac.vel_z);
+        double gs_actual = sqrt(ac.vel_x * ac.vel_x + ac.vel_z * ac.vel_z);
 
         // ------------------------------------------------
         // Turn prediction
         // ------------------------------------------------
-        if (fabs(ac.next.bank_angle) > 0.5 && gs > 2.0)
+        if (fabs(ac.next.bank_angle) > 0.5 && gs_actual > 2.0)
         {
             double bank_rad = ac.next.bank_angle * kPi / 180.0;
 
             double turnRate =
-                tan(bank_rad) * 9.81 / gs;   // rad/s
+                tan(bank_rad) * 9.81 / gs_actual;   // rad/s
 
             ac.ryaw += turnRate * dt * 57.2958; // rad → deg
             ac.ryaw = wrap360(ac.ryaw);
@@ -1180,12 +1050,18 @@ void AircraftManager::applyPositions()
         float serverYaw = wrap360(ac.next.yaw);
 
         float diff = shortestAngleDiff(ac.ryaw, serverYaw);
-
+        float gain = 0.01f;
         if (fabs(diff) > 1.0f)
-            targetYaw = wrap360(ac.ryaw + diff * 0.01f);
-        else
-            targetYaw = ac.ryaw;
+        {
+            if (fabs(diff) > 20.0f) gain = 0.05f;
+            if (fabs(diff) > 60.0f) gain = 0.1f;
 
+            targetYaw = wrap360(ac.ryaw + diff * gain);
+        }
+        else
+        {
+            targetYaw = ac.ryaw;
+        }
         // ------------------------------------------------
         // Initialisierung
         // ------------------------------------------------
@@ -1194,6 +1070,17 @@ void AircraftManager::applyPositions()
             ac.ryaw  = targetYaw;
             ac.rroll = targetRoll;
             ac.has_att = true;
+        }
+
+        if (!ac.has_pitch)
+        {
+            ac.rpitch = targetPitch;
+            ac.has_pitch = true;
+        }
+        else
+        {
+            float maxRate = on_ground ? 5.0f : 10.0f; // deg/sec
+            ac.rpitch = moveTowards(ac.rpitch, targetPitch, maxRate * dt);
         }
 
         // ------------------------------------------------
@@ -1211,23 +1098,6 @@ void AircraftManager::applyPositions()
             maxYawRateDegPerSec * dtf
         );
 
-        // DEBUG nur für DLH330
-        if (kv.first == "DLH330")
-        {
-            char buf[256];
-            sprintf(buf,
-                "DLH330 YAW | target=%.2f | ryaw=%.2f | vel=(%.2f %.2f) | GS=(%.2f %.2f)\n",
-                targetYaw,
-                ac.ryaw,
-                ac.vel_x,
-                ac.vel_z,
-                ac.next.gs_east_mps,
-                ac.next.gs_north_mps
-            );
-
-            XPLMDebugString(buf);
-        }
-
         XPLMDrawInfo_t di{};
         di.structSize = sizeof(di);
 
@@ -1237,7 +1107,7 @@ void AircraftManager::applyPositions()
 
         di.heading = ac.ryaw;
         di.roll    = ac.rroll;
-        di.pitch   = 0.0f;
+        di.pitch   = ac.rpitch;
 
         float drefValues[1] = { ac.gear_ratio };
 

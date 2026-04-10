@@ -53,7 +53,13 @@ class MUCTEST(Environment):
         self.aircraft_gate2 = Aircraft(self.traffic, call_sign="RYR201", aircraft_type="B738", flight_phase=FlightPhase.AT_GATE_ORIGIN, configuration=Config.TAKEOFF,
                                       lat=lat_gate3, long=long_gate3, alt=alt_dep, heading=hdg_gate3, cas=0.0, fuel_weight=5273.0, payload_weight=12000.0, cruise_alt=37000)
         self.aircraft_gate3 = Aircraft(self.traffic, call_sign="AFR202", aircraft_type="A320", flight_phase=FlightPhase.AT_GATE_ORIGIN, configuration=Config.TAKEOFF,
-                                      lat=lat_gate4, long=long_gate4, alt=alt_dep, heading=hdg_gate4, cas=0.0, fuel_weight=5273.0, payload_weight=12000.0, cruise_alt=37000)
+                                      lat=lat_gate4, long=long_gate4, alt=alt_dep, heading=hdg_gate4, cas=0.0,
+                                      fuel_weight=5273.0, payload_weight=12000.0,
+                                      departure_airport="EDDM", departure_runway="08R", sid="GIVM6E",
+                                      arrival_airport="EDDM", arrival_runway="08L", approach="I08L",
+                                      flight_plan=[
+                                          "ERNAS", "DKB", "GUPIN", "TEKSI", "WLD", "ROK08"],
+                                      cruise_alt=7000)
         self.aircraft_gate4 = Aircraft(self.traffic, call_sign="KLM203", aircraft_type="B738", flight_phase=FlightPhase.AT_GATE_ORIGIN, configuration=Config.TAKEOFF,
                                       lat=lat_gate5, long=long_gate5, alt=alt_dep, heading=hdg_gate5, cas=0.0, fuel_weight=5273.0, payload_weight=12000.0, cruise_alt=37000)
         self.aircraft_gate5 = Aircraft(self.traffic, call_sign="BEL204", aircraft_type="A320", flight_phase=FlightPhase.AT_GATE_ORIGIN, configuration=Config.TAKEOFF,
@@ -71,7 +77,13 @@ class MUCTEST(Environment):
         self.aircraft_gate11 = Aircraft(self.traffic, call_sign="DLH210", aircraft_type="A333", flight_phase=FlightPhase.AT_GATE_ORIGIN, configuration=Config.TAKEOFF,
                                       lat=lat_gate12, long=long_gate12, alt=alt_dep, heading=hdg_gate12, cas=0.0, fuel_weight=5273.0, payload_weight=12000.0, cruise_alt=37000)
         self.aircraft_gate12 = Aircraft(self.traffic, call_sign="DLH211", aircraft_type="A320", flight_phase=FlightPhase.AT_GATE_ORIGIN, configuration=Config.TAKEOFF,
-                                      lat=lat_gate13, long=long_gate13, alt=alt_dep, heading=hdg_gate13, cas=0.0, fuel_weight=5273.0, payload_weight=12000.0, cruise_alt=37000)
+                                      lat=lat_gate4, long=long_gate4, alt=alt_dep, heading=hdg_gate4, cas=0.0,
+                                      fuel_weight=10000.0, payload_weight=3000.0,
+                                      departure_airport="EDDM", departure_runway="08R", sid="RIDA7E",
+                                      arrival_airport="EDDS", arrival_runway="25", approach="I25",
+                                      flight_plan=[
+                                          "REDVO", "DODIL", "TEK25"],
+                                      cruise_alt=23000)
         self.aircraft_gate13 = Aircraft(self.traffic, call_sign="DLH212", aircraft_type="A333", flight_phase=FlightPhase.AT_GATE_ORIGIN, configuration=Config.TAKEOFF,
                                       lat=lat_gate14, long=long_gate14, alt=alt_dep, heading=hdg_gate14, cas=0.0, fuel_weight=5273.0, payload_weight=12000.0, cruise_alt=37000)
         self.aircraft_gate14 = Aircraft(self.traffic, call_sign="DLH213", aircraft_type="A320", flight_phase=FlightPhase.AT_GATE_ORIGIN, configuration=Config.TAKEOFF,
@@ -145,32 +157,27 @@ class MUCTEST(Environment):
             if ac.is_taxiing():
                 ac.update_taxi()
 
+        if self.global_time == 1:
+            print(self.aircraft_gate12.traffic.ap.flight_plan_name)
+        
         if self.global_time == 10:
-            print("EDDM nodes:", Nav.taxi_nodes[Nav.taxi_nodes["airport"]=="EDDM"].shape)
-            print("EDDM edges:", Nav.taxi_edges[Nav.taxi_edges["airport"]=="EDDM"].shape)
+        #    print("EDDM nodes:", Nav.taxi_nodes[Nav.taxi_nodes["airport"]=="EDDM"].shape)
+        #    print("EDDM edges:", Nav.taxi_edges[Nav.taxi_edges["airport"]=="EDDM"].shape)
             self.aircraft_full.start_taxi_to_runway("EDDM", "08L")
 
         if self.global_time == 20:
             self.aircraft_gate7.start_taxi_to_runway("EDDM", "08R")
+            self.aircraft_gate3.start_flight()
+        if self.global_time == 30:
+            self.aircraft_gate3.take_off()
 
-        #self.aircraft_full.update_taxi()
-        #self.aircraft_gate7.update_taxi()
-        # self.print_ground_debug()
-        if(self.global_time > 10):
-            print("Taxi index DLH330:", self.aircraft_full.taxi_index)
-            print("Taxi route length DLH330:", len(self.aircraft_full.taxi_route))
-            if self.aircraft_gate7.taxi_index < len(self.aircraft_gate7.taxi_route):
-                print("Taxi targetDLH306:", self.aircraft_gate7.taxi_route[self.aircraft_gate7.taxi_index])
-            else:
-                print("Taxi finished for: DLH206")
+        if self.global_time == 200:
+            self.aircraft_gate12.start_flight()
+        if self.global_time == 210:
+            self.aircraft_gate12.take_off()
 
-        if(self.global_time > 20):
-            print("Taxi index DLH206:", self.aircraft_gate7.taxi_index)
-            print("Taxi route length DLH206:", len(self.aircraft_gate7.taxi_route))
-            if self.aircraft_gate7.taxi_index < len(self.aircraft_gate7.taxi_route):
-                print("Taxi targetDLH306:", self.aircraft_gate7.taxi_route[self.aircraft_gate7.taxi_index])
-            else:
-                print("Taxi finished for: DLH206")
+        if self.global_time == 500:
+            self.aircraft_gate12.set_alt(10000)
 
         t = self.global_time % 320
 

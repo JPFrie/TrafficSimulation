@@ -55,12 +55,16 @@ struct ManagedAircraft {
 
     int missedPackets = 0;
 
+    // Velocity (m/s)
     double vel_x = 0.0;
+    double vel_y = 0.0;
     double vel_z = 0.0;
-    
+
     float ryaw  = 0.0f;
     float rroll = 0.0f;
     bool  has_att = false;
+    float rpitch = 0.0f;
+    bool  has_pitch = false;
 
     double prev_rx = 0.0;
     double prev_rz = 0.0;
@@ -71,6 +75,7 @@ struct ManagedAircraft {
 
     double groundY = 0.0;
     bool hasGround = false;
+    bool is_grounded = true;
 
     // model + x-plane resources
     std::string model_key = "A320";

@@ -36,6 +36,9 @@
 #include "XPLMProcessing.h"
 #include "XPLMDataAccess.h"
 #include "UdpReceiver.h"
+#include "UdpSender.h"
+#include "XPWidgets.h"
+#include "XPStandardWidgets.h"
 
 namespace fs = std::filesystem;
 
@@ -51,6 +54,10 @@ static int        gToggleItem = -1;
 
 static bool       gRunning = false;
 static UdpReceiver* gUdp = nullptr;
+static UdpSender* gSender = nullptr;
+static std::string gTargetIp = "127.0.0.1";
+static int gTargetPort = 5006;
+
 static AircraftManager gAircraftManager;
 static int  gShowDebugItem = -1;
 static bool gShowDebug     = false;
@@ -62,6 +69,10 @@ static XPLMInstanceRef gTestInst = nullptr;
 
 static void* const MENU_STARTSTOP = (void*)1;
 static void* const MENU_SHOWDEBUG = (void*)2;
+static void* const MENU_SET_IP = (void*)3;
+
+static XPWidgetID gIpWidget = nullptr;
+static XPWidgetID gIpTextField = nullptr;
 
 static XPLMDataRef drOverridePlane = XPLMFindDataRef("sim/operation/override/override_planepath");
 static XPLMDataRef drOverrideForces = XPLMFindDataRef("sim/operation/override/override_forces");
@@ -95,6 +106,15 @@ static float DebugLoopCb(float inElapsedSinceLastCall,
                          float /*inElapsedTimeSinceLastFlightLoop*/,
                          int   /*inCounter*/,
                          void* /*inRefcon*/);
+
+static void OpenIpInputWindow();
+
+static int IpWidgetHandler(
+    XPWidgetMessage msg,
+    XPWidgetID widget,
+    intptr_t param1,
+    intptr_t param2
+);
 
 static void UpdateMenuChecks();
 static void ToggleDebug();
@@ -162,7 +182,7 @@ static void StartBridge() {
 
     // Create UDP receiver
     gUdp = new UdpReceiver(5005);
-
+    gSender = new UdpSender(gTargetIp.c_str(), gTargetPort);
     // Register flight loop at ~50Hz (0.02s). Use 0 for "every frame".
     XPLMRegisterFlightLoopCallback(FlightLoopCb, 0.02f, nullptr);
 
@@ -181,6 +201,9 @@ static void StopBridge() {
 
     delete gUdp;
     gUdp = nullptr;
+
+    delete gSender;
+    gSender = nullptr;
 
     gRunning = false;
     UpdateMenuChecks();
@@ -248,6 +271,9 @@ static void MenuHandler(void* /*inMenuRef*/, void* inItemRef)
     }
     else if (inItemRef == MENU_SHOWDEBUG) {
         ToggleDebug();
+    }
+    else if (inItemRef == MENU_SET_IP) {
+        OpenIpInputWindow();
     }
 }
 
@@ -500,6 +526,37 @@ static float FlightLoopCb(float inElapsedSinceLastCall,
         RebuildJumpMenu();
     }
 
+    // =====================
+    // Send player position
+    // =====================
+    static float sendTimer = 0.0f;
+    sendTimer += inElapsedSinceLastCall;
+
+    if (gSender && sendTimer > 0.1f) { // 10 Hz
+        sendTimer = 0.0f;
+
+        static XPLMDataRef lat = XPLMFindDataRef("sim/flightmodel/position/latitude");
+        static XPLMDataRef lon = XPLMFindDataRef("sim/flightmodel/position/longitude");
+        static XPLMDataRef alt = XPLMFindDataRef("sim/flightmodel/position/elevation");
+        static XPLMDataRef hdg = XPLMFindDataRef("sim/flightmodel/position/hpath");
+        static XPLMDataRef spd = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed");
+
+        double plat = XPLMGetDatad(lat);
+        double plon = XPLMGetDatad(lon);
+        double palt = XPLMGetDatad(alt);
+        float  phd  = XPLMGetDataf(hdg);
+        float  pspd = XPLMGetDataf(spd);
+
+        char msg[256];
+        std::snprintf(
+            msg, sizeof(msg),
+            "{\"player\":{\"lat\":%.8f,\"lon\":%.8f,\"alt_m\":%.2f,\"hdg\":%.2f,\"spd\":%.1f}}",
+            plat, plon, palt, phd, pspd
+        );
+
+        gSender->send(msg);
+    }
+
     return 0.02f;
 }
 
@@ -539,6 +596,81 @@ static void ToggleDebug()
     UpdateMenuChecks();
 }
 
+void OpenIpInputWindow()
+{
+    if (gIpWidget) return;
+
+    int x = 300, y = 600, w = 300, h = 120;
+
+    gIpWidget = XPCreateWidget(
+        x, y, x + w, y - h,
+        1,
+        "Set Target IP",
+        1,
+        nullptr,
+        xpWidgetClass_MainWindow
+    );
+
+    XPSetWidgetProperty(gIpWidget, xpProperty_MainWindowHasCloseBoxes, 1);
+
+    gIpTextField = XPCreateWidget(
+        x + 20, y - 40, x + w - 20, y - 70,
+        1,
+        gTargetIp.c_str(),
+        0,
+        gIpWidget,
+        xpWidgetClass_TextField
+    );
+
+    XPSetWidgetProperty(gIpTextField, xpProperty_TextFieldType, xpTextEntryField);
+
+    XPWidgetID btn = XPCreateWidget(
+        x + 20, y - 80, x + w - 20, y - 110,
+        1,
+        "Apply",
+        0,
+        gIpWidget,
+        xpWidgetClass_Button
+    );
+
+    XPAddWidgetCallback(gIpWidget, IpWidgetHandler);
+}
+
+int IpWidgetHandler(
+    XPWidgetMessage msg,
+    XPWidgetID widget,
+    intptr_t param1,
+    intptr_t param2
+)
+{
+    if (msg == xpMsg_PushButtonPressed) {
+
+        char buffer[256];
+        XPGetWidgetDescriptor(gIpTextField, buffer, sizeof(buffer));
+
+        gTargetIp = buffer;
+
+        XPLog("[AI_XPlane_Bridge] New target IP: %s", gTargetIp.c_str());
+
+        if (gSender) {
+            gSender->setTarget(gTargetIp.c_str(), gTargetPort);
+        }
+
+        XPDestroyWidget(gIpWidget, 1);
+        gIpWidget = nullptr;
+
+        return 1;
+    }
+
+    if (msg == xpMessage_CloseButtonPushed) {
+        XPDestroyWidget(gIpWidget, 1);
+        gIpWidget = nullptr;
+        return 1;
+    }
+
+    return 0;
+}
+
 // =====================
 // X-Plane Plugin API
 // =====================
@@ -555,6 +687,7 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     gToggleItem = XPLMAppendMenuItem(gMenu, "Start / Stop", MENU_STARTSTOP, 0);
     gShowDebugItem = XPLMAppendMenuItem(gMenu, "ShowDebug (spawn Test.obj at player)", MENU_SHOWDEBUG, 0);
+    XPLMAppendMenuItem(gMenu, "Set Target IP...", MENU_SET_IP, 0);
 
     UpdateMenuChecks(); 
 

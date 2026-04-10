@@ -12,11 +12,12 @@ add_library(AI_XPlane_Bridge SHARED
     src/AircraftManager.cpp
     src/UdpReceiver.cpp
     src/PlayerReader.cpp
+    src/UdpSender.cpp
 )
 
 target_include_directories(AI_XPlane_Bridge PRIVATE
     ${XPLANE_SDK}/CHeaders/XPLM
-    ${XPLANE_SDK}/CHeaders/XPWidgets
+    ${XPLANE_SDK}/CHeaders/Widgets
     ${XPLANE_SDK}/include
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src

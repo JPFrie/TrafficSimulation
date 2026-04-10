@@ -1,0 +1,18 @@
+test/obj64/./src/Plugin.o: src/Plugin.cpp include/Logger.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMUtilities.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMDefs.h src/AircraftManager.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMDataAccess.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMScenery.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMGraphics.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMInstance.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMScenery.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMPlugin.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMMenus.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMUtilities.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMProcessing.h \
+ include/UdpReceiver.h src/UdpSender.h \
+ thirdparty/XPlaneSDK/CHeaders/Widgets/XPWidgets.h \
+ thirdparty/XPlaneSDK/CHeaders/Widgets/XPWidgetDefs.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMDefs.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMDisplay.h \
+ thirdparty/XPlaneSDK/CHeaders/Widgets/XPStandardWidgets.h

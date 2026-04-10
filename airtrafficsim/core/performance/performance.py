@@ -859,3 +859,18 @@ class Performance:
             return self.perf_model.update_configuration(V_cas, H_p, vertical_mode)
         else:
             return np.where(V_cas > 0.0, Config.CLEAN, Config.TAKEOFF)
+        
+    def estimate_lift(self, tas, mass, config):
+        rho = 1.225
+        S = 122.6  # A320 approx
+
+        # CL abhängig von Konfiguration
+        CL = np.where(
+            config == Config.TAKEOFF, 2.0,
+            np.where(config == Config.CLEAN, 0.5, 1.2)
+        )
+
+        lift = 0.5 * rho * (tas**2) * S * CL
+        weight = mass * 9.81
+
+        return lift, weight

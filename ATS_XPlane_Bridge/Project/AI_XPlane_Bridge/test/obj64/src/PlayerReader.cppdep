@@ -1,0 +1,9 @@
+test/obj64/./src/PlayerReader.o: src/PlayerReader.cpp src/PlayerReader.h \
+ src/AircraftManager.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMDataAccess.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMDefs.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMUtilities.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMScenery.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMGraphics.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMInstance.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMScenery.h

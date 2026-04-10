@@ -4,7 +4,7 @@ from airtrafficsim.core.autopilot import Autopilot
 from airtrafficsim.core.weather.weather import Weather
 from airtrafficsim.core.performance.performance import Performance
 from airtrafficsim.utils.unit_conversion import Unit
-from airtrafficsim.utils.enums import FlightPhase, GroundPhase, SpeedMode, APSpeedMode, APThrottleMode, APVerticalMode, Config, VerticalMode
+from airtrafficsim.utils.enums import FlightPhase, GroundPhase, SpeedMode, APSpeedMode, APThrottleMode, APVerticalMode, Config, VerticalMode, APLateralMode
 from airtrafficsim.utils.calculation import Cal
 
 
@@ -63,6 +63,10 @@ class Traffic:
         """Latitude [deg]"""
         self.long = np.zeros([0])
         """Longitude [deg]"""
+        self.prev_lat = np.zeros([0])
+        """Previous Latitude [deg]"""
+        self.prev_long = np.zeros([0])
+        """Previous Longitude [deg]"""
         self.alt = np.zeros([0])
         """Altitude [ft] Geopotential altitude"""
         self.trans_alt = np.zeros([0])
@@ -208,6 +212,9 @@ class Traffic:
         self.max_alt = self.perf.cal_maximum_alt(self.weather.d_T, self.mass)
         self.max_cas, self.max_mach = self.perf.cal_maximum_speed()
 
+        self.prev_lat = np.append(self.prev_lat, lat)
+        self.prev_long = np.append(self.prev_long, long)
+
         # Increase aircraft count
         self.n = self.n + 1
 
@@ -259,6 +266,9 @@ class Traffic:
         # Ground Mode
         self.taxi_speed = np.delete(self.taxi_speed, i)
         self.ground_phase = np.delete(self.ground_phase, i)
+        
+        self.prev_lat = np.delete(self.prev_lat, index)
+        self.prev_long = np.delete(self.prev_long, index)
 
         self.perf.del_aircraft(i)
         self.ap.del_aircraft(i)
@@ -289,7 +299,8 @@ class Traffic:
         # -----------------------------
         # Weather
         # -----------------------------
-
+        self.prev_lat = np.copy(self.lat)
+        self.prev_long = np.copy(self.long)
         self.weather.update(self.lat, self.long, self.alt, self.perf, global_time)
 
         self.speed_mode = np.where(
@@ -306,22 +317,99 @@ class Traffic:
         # -----------------------------
         # Ground / Air separation
         # -----------------------------
-        ground_mask = self.ground_phase != -1
-        air_mask = ~ground_mask
+        takeoff_mask = self.ground_phase == GroundPhase.TAKEOFF
+        taxi_mask = self.ground_phase == GroundPhase.TAXI
+        parked_mask = self.ground_phase == GroundPhase.PARKED
 
         # -----------------------------
         # Ground aircraft
         # -----------------------------
-        if np.any(ground_mask):
+        if np.any(parked_mask):
             self.update_ground(d_t)
-            self.vertical_mode[ground_mask] = VerticalMode.LEVEL
-            self.ap.speed_mode[ground_mask] = APSpeedMode.CONSTANT_CAS
-            self.cas[ground_mask] = 0.0
-            self.tas[ground_mask] = 0.0
-            self.mach[ground_mask] = 0.0
-            self.vs[ground_mask] = 0.0
-            self.accel[ground_mask] = 0.0
-            self.path_angle[ground_mask] = 0.0
+            self.vertical_mode[parked_mask] = VerticalMode.LEVEL
+            self.ap.speed_mode[parked_mask] = APSpeedMode.CONSTANT_CAS
+            self.cas[parked_mask] = 0.0
+            self.tas[parked_mask] = 0.0
+            self.mach[parked_mask] = 0.0
+            self.vs[parked_mask] = 0.0
+            self.accel[parked_mask] = 0.0
+            self.path_angle[parked_mask] = 0.0
+        
+        if np.any(taxi_mask):
+            self.update_ground(d_t)
+            self.vertical_mode[taxi_mask] = VerticalMode.LEVEL
+            self.ap.speed_mode[taxi_mask] = APSpeedMode.CONSTANT_CAS
+            self.cas[taxi_mask] = 0.0
+            self.tas[taxi_mask] = 0.0
+            self.mach[taxi_mask] = 0.0
+            self.vs[taxi_mask] = 0.0
+            self.accel[taxi_mask] = 0.0
+            self.path_angle[taxi_mask] = 0.0
+
+        if np.any(takeoff_mask):
+            # einfache Beschleunigung
+            accel = 3.0  # m/s²
+
+            speed_mps = self.taxi_speed[takeoff_mask] * 0.514444
+            speed_mps += accel * d_t
+
+            self.taxi_speed[takeoff_mask] = speed_mps / 0.514444
+
+            gs_north = self.taxi_speed[takeoff_mask] * np.cos(np.deg2rad(self.heading[takeoff_mask]))
+            gs_east = self.taxi_speed[takeoff_mask] * np.sin(np.deg2rad(self.heading[takeoff_mask]))
+
+            self.gs_north[takeoff_mask] = gs_north
+            self.gs_east[takeoff_mask] = gs_east
+
+            self.lat[takeoff_mask] += gs_north * d_t / 216000
+            self.long[takeoff_mask] += gs_east * d_t / 216000
+
+            # Speed setzen
+            self.cas[takeoff_mask] = self.taxi_speed[takeoff_mask]
+            self.tas[takeoff_mask] = self.taxi_speed[takeoff_mask]
+            self.mach[takeoff_mask] = 0.0
+
+            # -----------------------------
+            # LIFT-OFF LOGIK
+            # -----------------------------
+            for i in range(len(self.alt)):
+                # Nur Flugzeuge im Takeoff Roll
+                if self.ground_phase[i] == GroundPhase.TAKEOFF:
+
+                    # TAS in m/s (WICHTIG!)
+                    tas_mps = Unit.kts2mps(self.tas[i])
+
+                    vr = 150
+
+                    lift, weight = self.perf.estimate_lift(
+                        tas_mps,
+                        self.mass[i],
+                        self.configuration[i]
+                    )
+
+                    # Rotate wenn Lift ausreichend
+                    if self.tas[i] >= vr or lift >= 0.7 * weight:
+
+                        # ✈️ Übergang in Flug
+                        self.flight_phase[i] = FlightPhase.CLIMB
+                        self.vertical_mode[i] = VerticalMode.CLIMB
+
+                        self.ap.takeoff_mode[i] = True
+                        self.ap.takeoff_heading[i] = self.heading[i]
+                        self.ap.takeoff_distance[i] = 0.0
+
+                        self.ap.lateral_mode[i] = APLateralMode.HEADING
+
+                        # leichte Initial Climb Rate
+                        self.ap.vs[i] = 2500.0  # ft/min
+
+                        # Pitch initialisieren (optional)
+                        #self.path_angle[i] = 5.0
+
+                        # Gear up / clean config
+                        self.configuration[i] = Config.CLEAN
+
+        air_mask = self.ground_phase == -1
             
         # -----------------------------
         # Flight phase + configuration
@@ -369,11 +457,14 @@ class Traffic:
                 (self.flight_phase == FlightPhase.AT_GATE_DEST),
 
                 (self.flight_phase == FlightPhase.TAXI_ORIGIN) |
-                (self.flight_phase == FlightPhase.TAXI_DEST)
+                (self.flight_phase == FlightPhase.TAXI_DEST),
+
+                (self.flight_phase == FlightPhase.TAKEOFF)
             ],
             choicelist=[
                 GroundPhase.PARKED,
-                GroundPhase.TAXI
+                GroundPhase.TAXI,
+                GroundPhase.TAKEOFF
             ],
             default=-1
         )
@@ -488,6 +579,18 @@ class Traffic:
 
         self.fuel_consumed[air_mask] += fuel_burn[air_mask]
         self.mass[air_mask] -= fuel_burn[air_mask]
+
+        dist_km = Cal.cal_great_circle_dist(
+            self.prev_lat,
+            self.prev_long,
+            self.lat,
+            self.long
+        )
+
+        dist_nm = Unit.m2nm(dist_km * 1000.0)
+
+        self.ap.takeoff_distance += dist_nm
+                
 
     '''
     def update(self, global_time, d_t=1):

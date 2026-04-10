@@ -877,3 +877,88 @@ class Nav:
                     gates.append(line.strip())
 
         return gates
+    
+    @staticmethod
+    def _calculate_bearing(lat1, lon1, lat2, lon2):
+        """
+        Calculate true bearing from point A to B (in degrees).
+        """
+        lat1 = np.radians(lat1)
+        lon1 = np.radians(lon1)
+        lat2 = np.radians(lat2)
+        lon2 = np.radians(lon2)
+
+        dlon = lon2 - lon1
+
+        x = np.sin(dlon) * np.cos(lat2)
+        y = np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(dlon)
+
+        heading = np.degrees(np.arctan2(x, y))
+        return (heading + 360) % 360
+
+
+    def get_runway_heading(airport: str, runway: str) -> float:
+        """
+        Returns TRUE heading of runway from apt.dat (X-Plane 12 format)
+
+        Parameters
+        ----------
+        airport : str
+            ICAO (e.g. "EDDM")
+
+        runway : str
+            Runway (e.g. "08L")
+
+        Returns
+        -------
+        float
+            Heading in degrees (0-360)
+        """
+
+        apt_path = Path(__file__).parent.parent.resolve().joinpath(
+            "./data/navigation/xplane/apt.dat"
+        )
+
+        with open(apt_path, "r") as file:
+
+            # skip header
+            next(file); next(file); next(file)
+
+            current_airport = ""
+
+            for line in file:
+                row = line.split()
+
+                if not row:
+                    continue
+
+                # airport header
+                if row[0] in ("1", "16", "17"):
+                    current_airport = row[4]
+                    continue
+
+                # runway line
+                if current_airport == airport and row[0] == "100":
+
+                    try:
+                        # --- Runway end 1 ---
+                        rwy1 = row[8]
+                        lat1 = float(row[9])
+                        lon1 = float(row[10])
+
+                        # --- Runway end 2 ---
+                        rwy2 = row[17]
+                        lat2 = float(row[18])
+                        lon2 = float(row[19])
+
+                    except (IndexError, ValueError):
+                        continue
+
+                    # match runway
+                    if runway in rwy1:
+                        return Nav._calculate_bearing(lat1, lon1, lat2, lon2)
+
+                    if runway in rwy2:
+                        return Nav._calculate_bearing(lat2, lon2, lat1, lon1)
+
+        raise ValueError(f"Runway {runway} not found at airport {airport}")

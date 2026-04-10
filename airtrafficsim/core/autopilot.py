@@ -26,6 +26,15 @@ class Autopilot:
         self.ap_rate_of_turn = np.zeros([0])                    
         """Rate of turn [deg/s]"""
 
+        self.takeoff_mode = np.zeros([0], dtype=bool)
+        """True während Initial Climb"""
+
+        self.takeoff_heading = np.zeros([0])
+        """Runway heading merken"""
+
+        self.takeoff_distance = np.zeros([0])
+        """Geflogene Strecke seit Takeoff [nm]"""
+
         # Target speed
         self.cas = np.zeros([0])                                
         """Autopilot target calibrated air speed [knots]"""
@@ -124,7 +133,7 @@ class Autopilot:
         self.hv_next_wp = np.append(self.hv_next_wp, False)
         self.dist = np.append(self.dist, 0.0)
         self.flight_plan_index = np.append(self.flight_plan_index, 0)               
-        self.flight_plan_name.append([])     
+        self.flight_plan_name.append([])    
         self.flight_plan_lat.append([])         
         self.flight_plan_long.append([])         
         self.flight_plan_target_alt.append([])  
@@ -139,6 +148,7 @@ class Autopilot:
         self.holding_round = np.append(self.holding_round, 0.0)  
         self.holding_info.append([])
 
+        print("STAR: ", star)
         # if not flight_plan == []:
         # Add SID to flight plan
         if not sid == "":
@@ -166,6 +176,9 @@ class Autopilot:
         # Add STAR to flight plan
         if not star == "":
             waypoint, alt_restriction_type, alt_restriction, speed_resctriction_type, speed_restriction = Nav.get_procedure(arrival_airport, arrival_runway, star)
+            print("STAR TEST 1: ", Nav.get_procedure("EDDF", "25C", "DEBH1B"))
+            print("STAR TEST 2: ", Nav.get_procedure("EDDF", "", "DEBH1B"))
+            print("STAR routing: ", waypoint)
             self.flight_plan_name[-1].extend(waypoint)
             self.flight_plan_target_alt[-1].extend(alt_restriction)
             self.flight_plan_target_speed[-1].extend(speed_restriction)
@@ -229,6 +242,7 @@ class Autopilot:
                 self.flight_plan_long[-1].append(long_tmp)
                 self.flight_plan_target_alt[-1].append(alt_tmp)
                 # self.flight_plan_target_speed[n]
+            print("Last flight plan point: ", self.flight_plan_name[-1][-1])
 
         # Populate alt and speed target from last waypoint
         if len(self.flight_plan_target_alt[-1]) > 1:
@@ -241,8 +255,10 @@ class Autopilot:
         #     if val == -1:
         #         self.flight_plan_target_speed[n][i] = self.flight_plan_target_speed[n][i+1]
 
-            
-
+        print(self.flight_plan_name) 
+        self.takeoff_mode = np.append(self.takeoff_mode, False)
+        self.takeoff_heading = np.append(self.takeoff_heading, 0.0)
+        self.takeoff_distance = np.append(self.takeoff_distance, 0.0)
 
     def del_aircraft(self, index):
         """
@@ -282,7 +298,17 @@ class Autopilot:
         self.holding = np.delete(self.holding, index) 
         self.holding_round = np.delete(self.holding_round, index)  
         del self.holding_info[index]
+        self.takeoff_mode = np.delete(self.takeoff_mode, index)
+        self.takeoff_heading = np.delete(self.takeoff_heading, index)
+        self.takeoff_distance = np.delete(self.takeoff_distance, index)
 
+    def classify_waypoint(self, index, flight_plan_len):
+        if index < 3:
+            return "SID"
+        elif index > flight_plan_len - 4:
+            return "STAR"
+        else:
+            return "ENROUTE"
 
     def update(self, traffic: Traffic):
         """
@@ -293,6 +319,32 @@ class Autopilot:
         traffic : Traffic
             Traffic class
         """
+        
+        # -----------------------------
+        # INITIAL CLIMB LOGIC
+        # -----------------------------
+        for i in range(len(self.lat)):
+
+            if self.takeoff_mode[i]:
+
+                # Runway heading halten
+                self.heading[i] = self.takeoff_heading[i]
+                self.track_angle[i] = self.takeoff_heading[i]
+
+                # Noch NICHT LNAV!
+                self.lateral_mode[i] = APLateralMode.HEADING
+                dist = Cal.cal_great_circle_dist(traffic.lat, traffic.long, self.lat, self.long) 
+                # Nach 5 NM → LNAV aktivieren
+                dist_to_wp = dist[i]
+
+                if (
+                    self.takeoff_distance[i] >= 3.0
+                    or traffic.alt[i] >= 1200
+                    or dist_to_wp <= 0.5
+                ):
+                    self.takeoff_mode[i] = False
+                    self.lateral_mode[i] = APLateralMode.LNAV
+        
         # Update target based on flight plan
         for i, val in enumerate(self.flight_plan_index):    #TODO: optimization
             if val < len(self.flight_plan_name[i]):
@@ -334,6 +386,24 @@ class Autopilot:
         self.mach = np.where(traffic.speed_mode == SpeedMode.CAS, traffic.perf.tas_to_mach(traffic.perf.cas_to_tas(Unit.kts2mps(self.cas), traffic.weather.p, traffic.weather.rho), traffic.weather.T), self.mach)
         self.cas = np.where(traffic.speed_mode == SpeedMode.MACH, Unit.mps2kts(traffic.perf.tas_to_cas(traffic.perf.mach_to_tas(self.mach, traffic.weather.T), traffic.weather.p, traffic.weather.rho)), self.cas)
 
+        # Speed / Alt Limit Limits
+        low_alt = self.alt <= 10000
+        high_alt = self.alt > 10000
+
+        # --- CAS Limit unter 10k ft
+        self.cas = np.where(
+            low_alt & (self.cas > 250.0),
+            250.0,
+            self.cas
+        )
+
+        # --- Mach Limit über 10k ft
+        self.mach = np.where(
+            high_alt & (self.mach > 0.85),
+            0.85,
+            self.mach
+        )
+
         # Speed mode
         self.speed_mode = np.where(traffic.speed_mode == SpeedMode.CAS,
                                    np.select([self.cas < traffic.cas, self.cas == traffic.cas, self.cas > traffic.cas],
@@ -365,7 +435,8 @@ class Autopilot:
         self.track_angle =  np.where(self.lateral_mode == APLateralMode.HEADING, 0.0, np.where(dist < turn_dist, np.where(self.hv_next_wp, next_track_angle, self.track_angle), np.where(dist < 1.0, self.track_angle, curr_track_angle)))
         self.heading = np.where(self.lateral_mode == APLateralMode.HEADING, self.heading, self.track_angle + np.arcsin(traffic.weather.wind_speed / traffic.tas * np.sin(self.track_angle - traffic.weather.wind_direction))) #https://www.omnicalculator.com/physics/wind-correction-angle
         
-        update_next_wp = (self.lateral_mode == APLateralMode.LNAV) & (dist > self.dist) & (np.abs(Cal.cal_angle_diff(traffic.heading, next_track_angle)) < 1.0)
+        #update_next_wp = (self.lateral_mode == APLateralMode.LNAV) & (dist > self.dist) & (np.abs(Cal.cal_angle_diff(traffic.heading, next_track_angle)) < 1.0)
+        update_next_wp = ((self.lateral_mode == APLateralMode.LNAV) & (dist < turn_dist) | (dist < 1.0))
         self.flight_plan_index = np.where(update_next_wp, self.flight_plan_index+1, self.flight_plan_index)
         self.dist = np.where(update_next_wp, Cal.cal_great_circle_dist(traffic.lat, traffic.long, self.lat_next, self.long_next), dist)
 
@@ -397,5 +468,38 @@ class Autopilot:
                         self.holding_info[i] = []
                 
                     # update_next_wp[i] = False
+
+        # -----------------------------
+        # DEBUG: NEXT WAYPOINT INFO
+        # -----------------------------
+        for i in range(len(self.flight_plan_index)):
+
+            idx = self.flight_plan_index[i]
+
+            if idx < len(self.flight_plan_name[i]):
+
+                wp = self.flight_plan_name[i][idx]
+
+                # Distanz berechnen (km → NM)
+                dist_km = Cal.cal_great_circle_dist(
+                    traffic.lat[i],
+                    traffic.long[i],
+                    self.flight_plan_lat[i][idx],
+                    self.flight_plan_long[i][idx]
+                )
+
+                dist_nm = Unit.m2nm(dist_km * 1000.0)
+
+                # SID / STAR Klassifikation
+                wp_type = self.classify_waypoint(idx, len(self.flight_plan_name[i]))
+
+                # Callsign (falls vorhanden)
+                if hasattr(traffic, "callsign") and len(traffic.callsign) > i:
+                    callsign = traffic.callsign[i]
+                else:
+                    callsign = f"AC{i}"
+
+                print(f"{callsign} → WP: {wp} ({wp_type}) | Dist: {dist_nm:.2f} NM")
+
         
         

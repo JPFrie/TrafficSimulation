@@ -13,6 +13,9 @@
     <ClCompile Include="E:\X-Plane Plugins\AI_XPlane_Bridge\src\PlayerReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="E:\X-Plane Plugins\AI_XPlane_Bridge\src\UdpSender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="E:\X-Plane Plugins\AI_XPlane_Bridge\CMakeLists.txt" />

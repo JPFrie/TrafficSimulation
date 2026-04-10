@@ -1,0 +1,3 @@
+test/obj64/./src/UdpReceiver.o: src/UdpReceiver.cpp include/UdpReceiver.h \
+ include/Logger.h thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMUtilities.h \
+ thirdparty/XPlaneSDK/CHeaders/XPLM/XPLMDefs.h

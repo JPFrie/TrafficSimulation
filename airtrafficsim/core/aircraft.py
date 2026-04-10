@@ -71,6 +71,14 @@ class Aircraft:
         self.taxi_active = False
         self.taxi_hold_nodes = []
         self.taxi_airport = None
+        self.departure_airport = departure_airport
+        self.departure_runway = departure_runway
+        self.sid = sid
+        self.arrival_airport = arrival_airport
+        self.arrival_runway = arrival_runway
+        self.star = star
+        self.approach = approach
+        self.flight_plan = flight_plan
         
 
     def set_heading(self, heading):
@@ -432,13 +440,6 @@ class Aircraft:
 
         angle_error = abs(diff)
 
-        print(
-            f"[Taxi] idx={self.taxi_index} "
-            f"dist={dist:.1f}m "
-            f"hdg={current_heading:.1f} "
-            f"target={bearing:.1f}"
-        )
-
         # --------------------------------------------------
         # Node reached OR passed
         # --------------------------------------------------
@@ -452,7 +453,6 @@ class Aircraft:
         # --------------------------------------------------
 
         current_node = self.taxi_route[self.taxi_index]
-        print(self.taxi_hold_nodes)
         if current_node in self.taxi_hold_nodes:
             self.traffic.taxi_speed[index] = 0
             return
@@ -497,3 +497,41 @@ class Aircraft:
 
         self.set_vs(0)
     
+    def start_flight(self):
+        idx = self.get_idx()
+        if idx is None:
+            return
+
+        # Runway position
+        lat, lon, alt = Nav.get_runway_coord(self.departure_airport, self.departure_runway)
+
+        # Heading aus RW (RW25 → 250°)
+        #heading = int(runway.replace("RW", "")[:2]) * 10
+        heading = Nav.get_runway_heading(self.departure_airport, self.departure_runway)
+        # Set aircraft on runway
+        self.traffic.lat[idx] = lat
+        self.traffic.long[idx] = lon
+        self.traffic.alt[idx] = alt
+ 
+        self.traffic.heading[idx] = heading
+        self.traffic.ap.heading[idx] = heading
+
+    def take_off(self):
+        idx = self.get_idx()
+        if idx is None:
+            return
+        
+        # Ground state
+        from airtrafficsim.utils.enums import FlightPhase, GroundPhase
+        self.traffic.flight_phase[idx] = FlightPhase.TAKEOFF
+        #self.traffic.ground_phase[idx] = GroundPhase.TAKEOFF
+
+        # Initial speed
+        self.traffic.taxi_speed[idx] = 0.0
+
+        # Targets
+        self.set_speed(160)     # target takeoff speed
+        self.set_alt(7000)
+
+        # Activate LNAV
+        self.resume_own_navigation()

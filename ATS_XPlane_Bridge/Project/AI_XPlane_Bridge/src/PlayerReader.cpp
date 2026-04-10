@@ -15,6 +15,6 @@ AircraftState PlayerReader::read() {
     s.roll  = 0.0f;
     s.yaw   = XPLMGetDataf(hdg);
 
-    s.model_key = "PLAYER";
+    s.model_key = "OWNSHIP";
     return s;
 }

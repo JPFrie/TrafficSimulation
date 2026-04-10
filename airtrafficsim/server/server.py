@@ -275,8 +275,9 @@ def set_aircraft_state(data):
         ac_id = int(data.get("ac_id"))
         heading = float(data.get("heading"))
         altitude = float(data.get("altitude"))
-        tas = float(data.get("tas"))
-        phase = data.get("phase")
+        cas = float(data.get("cas"))
+        print(f"[!!!DEBUG] CAS SPEED of {ac_id} is: {cas}")
+        #phase = data.get("phase")
 
         # Aircraft finden
         aircraft = None
@@ -290,15 +291,15 @@ def set_aircraft_state(data):
 
         aircraft.set_heading(heading)
         aircraft.set_alt(altitude)
-        aircraft.set_speed(tas)
+        aircraft.set_speed(cas)
 
-        if phase:
-            from airtrafficsim.utils.enums import FlightPhase
-            idx = aircraft.index
-            i = list(current_env.traffic.index).index(idx)
-            current_env.traffic.flight_phase[i] = FlightPhase[phase]
+        #if phase:
+        #    from airtrafficsim.utils.enums import FlightPhase
+        #    idx = aircraft.index
+        #    i = list(current_env.traffic.index).index(idx)
+        #    current_env.traffic.flight_phase[i] = FlightPhase[phase]
 
-        print(f"[CONTROL] {ac_id} updated")
+        print(f"[CONTROL] Aircraft {ac_id} updated")
 
     except Exception as e:
         print("Error:", e)
@@ -320,7 +321,7 @@ def get_aircraft_list():
 
     for i in range(len(t.index)):
 
-        speed = t.taxi_speed[i] if t.ground_phase[i] != -1 else t.tas[i]
+        speed = t.taxi_speed[i] if t.ground_phase[i] != -1 else t.cas[i]
 
         aircraft.append({
             "id": int(t.index[i]),
@@ -329,7 +330,7 @@ def get_aircraft_list():
             "phase": FlightPhase(int(t.flight_phase[i])).name,
             "heading": float(t.heading[i]),
             "altitude": float(t.alt[i]),
-            "tas": float(speed),
+            "cas": float(speed),
             "lat": float(t.lat[i]),
             "lon": float(t.long[i])
         })
@@ -357,7 +358,36 @@ def add_aircraft(data):
         alt = float(data.get("altitude"))
         speed = float(data.get("speed"))
 
-        ac = Aircraft(
+        dep_airport = data.get("departure_airport", "")
+        dep_runway = data.get("departure_runway", "")
+        nsid = data.get("sid", "")
+
+        arr_airport = data.get("arrival_airport", "")
+        arr_runway = data.get("arrival_runway", "")
+        nstar = data.get("star", "")
+        napproach = data.get("approach", "")
+
+        nflight_plan = data.get("flight_plan", [])
+        print(nflight_plan)
+
+        if not nflight_plan:
+            ac = Aircraft(
+                current_env.traffic,
+                call_sign=callsign,
+                aircraft_type=ac_type,
+                flight_phase=FlightPhase[phase],
+                configuration=Config.CLEAN,
+                lat=lat,
+                long=lon,
+                alt=alt,
+                heading=heading,
+                cas=speed,
+                fuel_weight=1000,
+                payload_weight=500,
+                cruise_alt=alt + 5000
+            )
+        else:
+            ac = Aircraft(
             current_env.traffic,
             call_sign=callsign,
             aircraft_type=ac_type,
@@ -370,7 +400,15 @@ def add_aircraft(data):
             cas=speed,
             fuel_weight=1000,
             payload_weight=500,
-            cruise_alt=alt + 5000
+            cruise_alt=alt + 5000,
+            departure_airport=dep_airport,
+            departure_runway=dep_runway,
+            sid=nsid,
+            arrival_airport=arr_airport,
+            arrival_runway=arr_runway,
+            star=nstar,
+            approach=napproach,
+            flight_plan=nflight_plan
         )
 
         ac.set_speed(speed)
@@ -397,6 +435,59 @@ def delete_aircraft(data):
             current_env.aircraft_list.remove(ac)
             print("Deleted:", ac_id)
             break
+
+@socketio.on('setToRunway')
+def set_to_runway(data):
+    global current_env
+
+    if current_env is None:
+        return
+
+    try:
+        ac_id = int(data.get("ac_id"))
+
+        aircraft = None
+        for ac in current_env.aircraft_list:
+            if int(ac.index) == ac_id:
+                aircraft = ac
+                break
+
+        if aircraft is None:
+            return
+
+        aircraft.start_flight()
+
+        print(f"[CONTROL] Set to RWY Aircraft {ac_id}")
+
+    except Exception as e:
+        print("Set RWY error:", e)
+
+@socketio.on('takeOff')
+def take_off(data):
+    global current_env
+
+    if current_env is None:
+        return
+
+    try:
+        ac_id = int(data.get("ac_id"))
+
+        aircraft = None
+        for ac in current_env.aircraft_list:
+            if int(ac.index) == ac_id:
+                aircraft = ac
+                break
+
+        if aircraft is None:
+            return
+
+        # TAKE OFF Methode aufrufen
+        aircraft.take_off()
+
+        print(f"[CONTROL] Take-off Aircraft {ac_id}")
+
+    except Exception as e:
+        print("Take-off error:", e)
 
 def run_server(port=6111, host="127.0.0.1"):
     # Change host to 0.0.0.0 during deployment
